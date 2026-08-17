@@ -80,6 +80,54 @@ def seed_data(conn):
     conn.executemany("INSERT INTO order_items VALUES (?, ?, ?, ?, ?)", items)
     conn.commit()
 
+def get_customers(conn):
+    return conn.execute(
+        "SELECT customer_id, name, city, signup_date FROM customers ORDER BY customer_id"
+    ).fetchall()
+
+def get_customer_by_id(conn, customer_id):
+    return conn.execute(
+        "SELECT customer_id, name, city, signup_date FROM customers WHERE customer_id = ?",
+        (customer_id,),
+    ).fetchone()
+
+def create_order(conn, customer_id, order_date, items):
+    with conn:
+        cur = conn.execute(
+            "INSERT INTO orders (customer_id, order_date, status) VALUES (?, ?, ?)",
+            (customer_id, order_date, "pending"),
+        )
+        order_id = cur.lastrowid
+
+        conn.executemany(
+            "INSERT INTO order_items (order_id, product, quantity, unit_price)"
+            " VALUES (?, ?, ?, ?)",
+            [(order_id, i["product"], i["quantity"], i["unit_price"]) for i in items],
+        )
+    return order_id
+
+def get_orders(conn, customer_id=None, status=None):
+    sql = """
+        SELECT order_id, customer_id, order_date, status
+        FROM orders
+    """
+    conditions = []
+    params = []
+
+    if customer_id is not None:
+        conditions.append("customer_id = ?")
+        params.append(customer_id)
+
+    if status is not None:
+        conditions.append("status = ?")
+        params.append(status)
+
+    if conditions:
+        sql += " WHERE " + " AND ".join(conditions)
+
+    sql += " ORDER BY order_id"
+    return conn.execute(sql, params).fetchall()
+
 def revenue_by_customer(conn):
     sql = """
         SELECT c.name,
