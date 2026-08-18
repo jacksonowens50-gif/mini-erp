@@ -4,6 +4,26 @@ A small order-management API — customers, orders, and line items — built ove
 
 The data layer (`orders_db.py`) knows nothing about HTTP. The API layer (`main.py`) knows nothing about SQL. Swapping SQLite for Postgres would touch one file.
 
+## Authentication
+
+All data endpoints require an `x-api-key` header. `/health` is intentionally open
+so monitoring can reach it without holding a credential.
+
+Set the key before starting the server (per terminal):
+
+```powershell
+$env:MINI_ERP_API_KEY = "your-key-here"
+fastapi dev main.py
+```
+
+Then either send the header directly:
+
+```powershell
+curl.exe -H "x-api-key: your-key-here" http://127.0.0.1:8000/customers
+```
+
+...or click **Authorize** at the top of `/docs` and paste the key once.
+
 ## Running it
 
 ```
